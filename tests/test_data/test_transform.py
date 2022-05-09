@@ -688,3 +688,50 @@ def test_mosaic():
     mosaic_module = build_from_cfg(transform, PIPELINES)
     results = mosaic_module(results)
     assert results['img'].shape[:2] == (20, 24)
+
+
+def test_albumentation():
+    results = dict()
+    img = mmcv.imread(
+        osp.join(osp.dirname(__file__), '../data/color.jpg'), 'color')
+    seg = np.array(
+        Image.open(osp.join(osp.dirname(__file__), '../data/seg.png')))
+    results['img'] = img
+    results['gt_semantic_seg'] = seg
+    results['seg_fields'] = ['gt_semantic_seg']
+    results['img_shape'] = img.shape
+    results['ori_shape'] = img.shape
+    # Set initial values for default meta_keys
+    results['pad_shape'] = img.shape
+    results['scale_factor'] = 1.0
+
+    transform = dict(
+        type='Albu', transforms=[dict(type='ChannelShuffle', p=1)])
+    transform = build_from_cfg(transform, PIPELINES)
+
+    output = transform(results)
+
+    assert output['img'].dtype == np.uint8
+    assert output['gt_semantic_seg'].dtype == np.uint8
+
+    transform = dict(
+        type='Albu',
+        transforms=[dict(type='ChannelShuffle', p=1)],
+        keymap=dict(img='image', gt_semantic_seg='mask'),
+        update_pad_shape=True)
+    transform = build_from_cfg(transform, PIPELINES)
+
+    output = transform(results)
+    assert output['img'].dtype == np.uint8
+    assert output['gt_semantic_seg'].dtype == np.uint8
+
+    transform = dict(
+        type='Albu',
+        transforms=[dict(type='ChannelShuffle', p=1)],
+        keymap=dict(img='image', gt_semantic_seg='mask'),
+        update_pad_shape=True)
+    transform = build_from_cfg(transform, PIPELINES)
+
+    output = transform(results)
+    assert output['img'].dtype == np.uint8
+    assert output['gt_semantic_seg'].dtype == np.uint8
